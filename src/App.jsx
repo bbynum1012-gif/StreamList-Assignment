@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Routes, Route, NavLink } from 'react-router-dom';
 import './App.css';
 
@@ -33,10 +33,20 @@ function Navbar() {
 
 function StreamList() {
   const [title, setTitle] = useState('');
-  const [movies, setMovies] = useState([]);
-  const [editingId, setEditingId] = useState(null);
-  const [message, setMessage] = useState('');
+const [movies, setMovies] = useState(() => {
+  try {
+    const savedMovies = localStorage.getItem('streamListMovies');
+    return savedMovies ? JSON.parse(savedMovies) : [];
+  } catch {
+    return [];
+  }
+});
+const [editingId, setEditingId] = useState(null);
+const [message, setMessage] = useState('');
 
+useEffect(() => {
+  localStorage.setItem('streamListMovies', JSON.stringify(movies));
+}, [movies]);
   function handleSubmit(event) {
     event.preventDefault();
     const cleanTitle = title.trim();
@@ -217,12 +227,117 @@ function StreamList() {
 }
 
 function MoviesPage() {
+  const [search, setSearch] = useState('');
+  const [movies, setMovies] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  async function searchMovies(event) {
+    event.preventDefault();
+
+    const cleanSearch = search.trim();
+
+    if (!cleanSearch) {
+      setError('Please enter a movie title to search.');
+      return;
+    }
+
+    const apiKey = import.meta.env.VITE_TMDB_API_KEY;
+
+    if (!apiKey) {
+      setError('TMDB API key not found. Check your .env file.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setMovies([]);
+
+    try {
+      const response = await fetch(
+        `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(cleanSearch)}&include_adult=false&language=en-US&page=1&api_key=${apiKey}`
+      );
+
+      if (!response.ok) {
+        const details = await response.text();
+        throw new Error(`TMDB Error ${response.status}: ${details}`);
+      }
+
+      const data = await response.json();
+      setMovies(data.results || []);
+
+      if (!data.results || data.results.length === 0) {
+        setError('No movies found. Try another title.');
+      }
+    } catch (err) {
+      setError(err.message || 'Something went wrong.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <main className="page-content">
-      <h1>
-        <Icon>movie</Icon> Movies
-      </h1>
-      <p>Your movie watchlist is managed on the Home page.</p>
+      <section className="hero">
+        <p className="eyebrow">DISCOVER SOMETHING TO WATCH</p>
+        <h1>Find Your Next Movie</h1>
+        <p>Search movies and explore information from TMDB.</p>
+      </section>
+
+      <section className="form-card">
+        <h2>Search Movies</h2>
+
+        <form onSubmit={searchMovies}>
+          <label htmlFor="movie-search">Movie title</label>
+          <input
+            id="movie-search"
+            type="text"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search for a movie..."
+          />
+
+          <button type="submit" className="submit-button" disabled={loading}>
+            <Icon>search</Icon>
+            {loading ? 'Searching...' : 'Search Movies'}
+          </button>
+        </form>
+
+        {error && <p className="status-message" role="status">{error}</p>}
+      </section>
+
+      <section className="watchlist">
+        <h2>Search Results</h2>
+
+        <div className="tmdb-grid">
+          {movies.map((movie) => (
+            <article className="tmdb-card" key={movie.id}>
+              {movie.poster_path ? (
+                <img
+                  src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                  alt={`${movie.title} movie poster`}
+                />
+              ) : (
+                <div className="poster-placeholder">No poster available</div>
+              )}
+
+              <div className="tmdb-card-info">
+                <h3>{movie.title}</h3>
+                <p>
+                  Release date: {movie.release_date || 'Not available'}
+                </p>
+                <p>
+                  {movie.overview || 'No description available.'}
+                </p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <p className="tmdb-credit">
+        Movie information and images provided by TMDB.
+      </p>
     </main>
   );
 }
