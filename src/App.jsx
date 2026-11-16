@@ -2,17 +2,34 @@ import { useState, useEffect, useRef } from 'react';
 import { Routes, Route, NavLink } from 'react-router-dom';
 import './App.css';
 
+
 function Icon({ children, filled = false }) {
   return (
     <span
       className="material-symbols-rounded"
       aria-hidden="true"
-      style={filled ? { fontVariationSettings: "'FILL' 1" } : undefined}
+      style={{
+        fontFamily: '"Material Symbols Rounded"',
+        fontWeight: 'normal',
+        fontStyle: 'normal',
+        fontSize: '24px',
+        lineHeight: 1,
+        letterSpacing: 'normal',
+        textTransform: 'none',
+        display: 'inline-block',
+        whiteSpace: 'nowrap',
+        direction: 'ltr',
+        WebkitFontSmoothing: 'antialiased',
+        fontVariationSettings: filled
+          ? '"FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24'
+          : '"FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24'
+      }}
     >
       {children}
     </span>
   );
 }
+
 
 function Navbar() {
   return (
