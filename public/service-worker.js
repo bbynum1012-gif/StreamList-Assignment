@@ -1,10 +1,11 @@
-
-const CACHE_NAME = "streamlist-v1";
+const CACHE_NAME = "streamlist-v2";
 
 const APP_FILES = [
   "/",
   "/index.html",
-  "/manifest.json"
+  "/manifest.json",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png"
 ];
 
 // Install the service worker and cache important app files.
